@@ -15,39 +15,40 @@ public class RoundStartMessage
 }
 
 [Serializable]
-public class PlayerActionUpdate 
+public class PlayerActionUpdate
 {
     public string playerId;
-    public string actionStatus; 
+    public string actionStatus;
 }
 
 [Serializable]
-public class InterpretationEnd 
+public class InterpretationEnd
 {
     public string message;
-    public bool chatEnabled; 
+    public bool chatEnabled;
 }
 
 [Serializable]
-public class RoundResult 
+public class RoundResult
 {
     public string finalSentence;
-    public int scoreChange; public VisualCue visualCue;
+    public int scoreChange;
+    public VisualCue visualCue;
     public TrialProposalPhase trialProposalPhase;
-
 }
+
 [Serializable]
-public class VisualCue 
+public class VisualCue
 {
     public string subject;
     public string target;
     public string effect;
     public string action;
-
 }
+
 [Serializable]
-public class TrialProposalPhase 
+public class TrialProposalPhase
 {
     public bool active;
-    public int timeLimit; 
+    public int timeLimit;
 }

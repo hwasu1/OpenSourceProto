@@ -1,35 +1,44 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerManager : MonoBehaviour
 {
     public string playerId;
     public string nickname;
-    public string role;         
-    public List<string> cards;
+    public string role;
+    public string slot;
+    public string colorName;
     public bool actionCompleted = false;
 
-    public void SetRoleAndCards(string assignedRole, List<string> cardList)
+    private Renderer playerRenderer;
+
+    private void Awake()
     {
-        role = assignedRole;
-        cards = cardList;
-        actionCompleted = false;
-        UIManager.Instance.SetupCardButtons(cards, this);
+        playerRenderer = GetComponent<Renderer>();
+        if (playerRenderer == null)
+            playerRenderer = GetComponentInChildren<Renderer>();
     }
 
-    public void SelectCard(string card)
+    public void SetColor(string colorName)
     {
-        if (actionCompleted) return;
-        NetworkManager.Instance.SendCardSelection(playerId, card);
-        actionCompleted = true;
-        UIManager.Instance.DisableMyCards();
-        Debug.Log($"Player {playerId} 선택 완료: {card}");
+        Material mat = Resources.Load<Material>(
+            $"Polytope Studio/Lowpoly_Characters/Sources/Materials/{colorName}"
+        );
+
+        if (mat != null)
+            playerRenderer.material = mat;
+        else
+            Debug.LogWarning($"Material for color '{colorName}' not found!");
+    }
+
+    public void SetRoleAndCards(string assignedRole, string assignedSlot)
+    {
+        role = assignedRole;
+        slot = assignedSlot;
+        actionCompleted = false;
     }
 
     public void MarkActionCompleted()
     {
         actionCompleted = true;
-        UIManager.Instance.DisableMyCards();
     }
-   
 }

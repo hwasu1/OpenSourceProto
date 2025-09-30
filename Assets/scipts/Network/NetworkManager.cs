@@ -1,6 +1,9 @@
+/*
+ * GPT 님이 
+ */
 
 
-/// GPT 베이스로 일단 생성만 해뒀습니다.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
