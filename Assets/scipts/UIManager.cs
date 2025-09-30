@@ -1,97 +1,125 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-// UI 관련 처리 담당: 카드 버튼, 배신자 정보, 심판 카운트다운, 시각 효과
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
 
-    private void Awake()
-    {
-        if (Instance == null) Instance = this;
-        else Destroy(gameObject);
-    }
+
+    private void Awake() { if (Instance == null) Instance = this; else Destroy(gameObject); }
 
     [Header("Card UI")]
     public GameObject cardButtonPrefab;
     public Transform cardContainer;
-
-    [Header("Traitor Info")]
-    public GameObject traitorPanel;
-    public Text traitorText;
-
-    [Header("Visual Cue")]
-    public Animator visualCueAnimator;
-
-    [Header("Trial Countdown")]
-    public Text countdownText;
-
     private List<GameObject> cardButtons = new List<GameObject>();
 
-    // 카드 버튼 생성
-    public void SetupCardButtons(List<string> cards)
+    [Header("Oracle & Role")] 
+    public GameObject oraclePanel; 
+    public Text oracleText; 
+    public Text roleText;
+
+    [Header("Traitor Info")] 
+    public GameObject traitorPanel; 
+    public Text traitorText;
+
+    [Header("Visual Cue")] 
+    public Animator visualCueAnimator;
+
+    [Header("Card Selection Timer")]
+    public Text countdownText;       
+    public Image timerCircle;        
+
+
+    public void SetupCardButtons(List<string> cards, PlayerManager player)
     {
-        // 기존 카드 삭제
         foreach (var btn in cardButtons) Destroy(btn);
         cardButtons.Clear();
 
         foreach (string card in cards)
         {
+            string cardCopy = card;
             GameObject newBtn = Instantiate(cardButtonPrefab, cardContainer);
-            newBtn.GetComponentInChildren<Text>().text = card;
+            newBtn.GetComponentInChildren<Text>().text = cardCopy;
             cardButtons.Add(newBtn);
 
-            // 클릭 이벤트 등록
-            newBtn.GetComponent<Button>().onClick.AddListener(() =>
-            {
-                OnCardClicked(card);
-            });
+            newBtn.GetComponent<Button>().onClick.AddListener(() => player.SelectCard(cardCopy));
         }
     }
 
-    // 카드 클릭 시 서버로 선택 전송
-    private void OnCardClicked(string card)
+    public void DisableMyCards() 
     {
-        Debug.Log($"카드 선택: {card}");
-        // TODO: 서버로 선택 전송
+        foreach (var btn in cardButtons) btn.GetComponent<Button>().interactable = false;
     }
 
-    // 내 카드 비활성화
-    public void DisableMyCards()
+    // 신탁과 역할(1라운드에만) 표시
+    public void ShowOracleAndRole(string oracle, string role, int round)
     {
-        foreach (var btn in cardButtons)
-            btn.GetComponent<Button>().interactable = false;
+        oraclePanel.SetActive(true);
+        oracleText.text = oracle;
+        // 첫 라운드에만 역할 표시
+        if (round == 1)
+            roleText.text = role;
+        else
+            roleText.text = "";
+
+        StartCoroutine(HideOraclePanelAfterSeconds(3f));
     }
 
-    // 배신자 정보 표시
+    // 신탁과 역할(1라운드에만) 표시 제거
+    private IEnumerator HideOraclePanelAfterSeconds(float seconds) 
+    {
+        yield return new WaitForSeconds(seconds);
+        oraclePanel.SetActive(false); 
+    }
+
+    // 배신자 역할에게만 보이는 
     public void ShowTraitorInfo(string godPersonality)
     {
         traitorPanel.SetActive(true);
-        traitorText.text = $"배신자 정보: {godPersonality}";
+        traitorText.text = $"신의 페르소나: {godPersonality}";
     }
 
-    // 시각적 효과 연출
+    public void AutoSelectRandomCard()
+    {
+        if (cardButtons.Count == 0) return;
+        int index = UnityEngine.Random.Range(0, cardButtons.Count);
+        string card = cardButtons[index].GetComponentInChildren<Text>().text;
+        cardButtons[index].GetComponent<Button>().onClick.Invoke();
+    }
+
     public void PlayVisualCue(VisualCue cue)
     {
-        // TODO: 실제 연출 구현
-        if (visualCueAnimator != null)
-        {
-            visualCueAnimator.SetTrigger(cue.effect);
-        }
+        if (visualCueAnimator != null) visualCueAnimator.SetTrigger(cue.effect);
     }
 
-    // 심판 단계 카운트다운
-    public IEnumerator TrialCountdown(int timeLimit)
+    //카드 선택용 타이머지만, 배신자 투표에도 사?용 가능합니다.
+    public IEnumerator StartTimer(float totalTime, Action onTimerEnd)
     {
-        int t = timeLimit;
-        while (t > 0)
+        float timer = totalTime;
+
+        while (timer > 0)
         {
-            countdownText.text = t.ToString();
-            yield return new WaitForSeconds(1f);
-            t--;
+            timer -= Time.deltaTime;
+
+            if (countdownText != null)
+                countdownText.text = Mathf.Ceil(timer).ToString();
+
+            if (timerCircle != null)
+                timerCircle.fillAmount = timer / totalTime;
+
+            yield return null;
         }
-        countdownText.text = "";
+
+        if (countdownText != null)
+            countdownText.text = "0";
+
+        if (timerCircle != null)
+            timerCircle.fillAmount = 0;
+
+        onTimerEnd?.Invoke();
     }
+
 }
